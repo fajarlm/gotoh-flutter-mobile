@@ -1,6 +1,5 @@
-import 'dart:async';
+import 'package:fe_mobile/views/Auth/auth_page.dart';
 import 'package:flutter/material.dart';
-import 'package:fe_mobile/views/home_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -9,50 +8,180 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+
+  double progress = 0;
 
   @override
   void initState() {
     super.initState();
 
-    Timer(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const HomePage(),
-        ),
-      );
-    });
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.4),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(_controller);
+
+    _controller.forward();
+
+    _startLoading();
+  }
+
+  Future<void> _startLoading() async {
+    for (int i = 0; i <= 100; i++) {
+      await Future.delayed(const Duration(milliseconds: 25));
+
+      setState(() {
+        progress = i / 100;
+      });
+    }
+
+    // pindah page
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const AuthPage()));
+  }
+  
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      backgroundColor: const Color(0xffE8F2E8),
+      body: SafeArea(
+        child: Stack(
           children: [
-
-            Image.network(
-              'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_1280.jpg',
-              width: 120,
+            Positioned(
+              top: -100,
+              left: -100,
+              child: Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(.25),
+                  shape: BoxShape.circle,
+                ),
+              ),
             ),
 
-            const SizedBox(height: 20),
+            Center(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              blurRadius: 15,
+                              color: Colors.black.withOpacity(.05),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.health_and_safety,
+                          color: Color(0xff0F6A42),
+                          size: 35,
+                        ),
+                      ),
 
-            const Text(
-              "My App",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+                      const SizedBox(height: 20),
+
+                      const Text(
+                        "GOTOH",
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xff0F6A42),
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      Text(
+                        "Go To Health",
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            )
+            ),
 
+            Positioned(
+              bottom: 80,
+              left: 40,
+              right: 40,
+              child: Column(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 8,
+                      backgroundColor: Colors.white,
+                      valueColor: const AlwaysStoppedAnimation(
+                        Color(0xff0F6A42),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Text(
+                    "${(progress * 100).toInt()}%",
+                    style: const TextStyle(
+                      color: Color(0xff0F6A42),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  Text(
+                    "HARMONIZING WELLNESS",
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontSize: 11,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-}
+}
