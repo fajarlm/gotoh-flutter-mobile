@@ -103,20 +103,23 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     _buildHeader(),
    
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildInfoCard(),
-                          const SizedBox(height: 20),
-                          _buildHealthTargetCard(),
-                          const SizedBox(height: 20),
-                          _buildCommunitiesSection(),
-                          const SizedBox(height: 32),
-                          _buildLogoutButton(),
-                          const SizedBox(height: 20),
-                        ],
+                    Transform.translate(
+                      offset: const Offset(0, -20),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildInfoCard(),
+                            const SizedBox(height: 20),
+                            _buildHealthTargetCard(),
+                            const SizedBox(height: 20),
+                            _buildCommunitiesSection(),
+                            const SizedBox(height: 32),
+                            _buildLogoutButton(),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
                       ),
                     ),
                   ],
