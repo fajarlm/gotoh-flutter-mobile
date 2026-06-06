@@ -1,10 +1,9 @@
-import 'dart:io';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fe_mobile/config/api_config.dart';
 import 'package:fe_mobile/model/post_model.dart';
 import 'package:fe_mobile/services/post_service.dart';
+import 'package:fe_mobile/views/user/edit_post_page.dart';
 import 'package:fe_mobile/views/user/post_create_page.dart';
 import 'package:fe_mobile/views/user/post_detail_page.dart';
 import 'package:fe_mobile/views/user/profile_page.dart';
@@ -148,19 +147,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
   }
 
-  void _showEditPostDialog(PostModel post) {
-    showDialog(
-      context: context,
-      builder: (ctx) => EditPostDialog(
-        post: post,
-        onSaved: () {
-          _fetchPosts(refresh: true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Postingan berhasil diperbarui'), backgroundColor: Color(0xFF0D631B)),
-          );
-        },
-      ),
+  Future<void> _showEditPostDialog(PostModel post) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => EditPostPage(post: post)),
     );
+    if (result == true && mounted) {
+      _fetchPosts(refresh: true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Postingan berhasil diperbarui'),
+          backgroundColor: Color(0xFF0D631B),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -603,209 +604,4 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return '${dt.day}/${dt.month}';
   }
 
- } // ── Bottom Nav ────────────────────────────────────────────────────────────
-
-class EditPostDialog extends StatefulWidget {
-  final PostModel post;
-  final VoidCallback onSaved;
-
-  const EditPostDialog({super.key, required this.post, required this.onSaved});
-
-  @override
-  State<EditPostDialog> createState() => _EditPostDialogState();
-}
-
-class _EditPostDialogState extends State<EditPostDialog> {
-  late TextEditingController _controller;
-  File? _imageFile;
-  bool _removeExistingImage = false;
-  bool _isSubmitting = false;
-  final ImagePicker _picker = ImagePicker();
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.post.content ?? '');
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickImage() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-      );
-      if (image != null) {
-        setState(() {
-          _imageFile = File(image.path);
-          _removeExistingImage = false;
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memilih gambar: $e')),
-      );
-    }
-  }
-
-  void _removeImage() {
-    setState(() {
-      _imageFile = null;
-      _removeExistingImage = true;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hasExistingImage = widget.post.image != null && widget.post.image!.isNotEmpty;
-    final showImage = (_imageFile != null) || (hasExistingImage && !_removeExistingImage);
-
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text(
-        'Edit Postingan',
-        style: TextStyle(color: Color(0xFF0D631B), fontWeight: FontWeight.bold),
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _controller,
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText: 'Isi postingan...',
-                filled: true,
-                fillColor: const Color(0xFFF4F8F0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Foto Postingan',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF40493D)),
-            ),
-            const SizedBox(height: 8),
-            if (showImage)
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: _imageFile != null
-                        ? Image.file(
-                            _imageFile!,
-                            width: double.infinity,
-                            height: 150,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.network(
-                            widget.post.imageUrl,
-                            width: double.infinity,
-                            height: 150,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              height: 150,
-                              color: const Color(0xFFF0F0F0),
-                              child: const Icon(Icons.broken_image, size: 40),
-                            ),
-                          ),
-                  ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onTap: _removeImage,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.black54,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.close, color: Colors.white, size: 18),
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            else
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  width: double.infinity,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE0E4DA)),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF0D631B), size: 32),
-                      SizedBox(height: 4),
-                      Text(
-                        'Pilih Foto dari Galeri',
-                        style: TextStyle(color: Color(0xFF0D631B), fontWeight: FontWeight.bold, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isSubmitting ? null : () => Navigator.pop(context),
-          child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF0D631B),
-            disabledBackgroundColor: Colors.grey,
-          ),
-          onPressed: _isSubmitting
-              ? null
-              : () async {
-                  setState(() => _isSubmitting = true);
-                  final res = await PostService.updatePost(
-                    id: widget.post.id,
-                    content: _controller.text.trim(),
-                    imageFile: _imageFile,
-                    removeImage: _removeExistingImage,
-                  );
-                  if (!mounted) return;
-                  setState(() => _isSubmitting = false);
-                  if (res['success'] == true) {
-                    Navigator.pop(context);
-                    widget.onSaved();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(res['message'] ?? 'Gagal memperbarui postingan'),
-                        backgroundColor: const Color(0xFFBA1A1A),
-                      ),
-                    );
-                  }
-                },
-          child: _isSubmitting
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                )
-              : const Text('Simpan', style: TextStyle(color: Colors.white)),
-        ),
-      ],
-    );
-  }
-}
+ }

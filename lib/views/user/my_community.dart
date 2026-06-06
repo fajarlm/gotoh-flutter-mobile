@@ -214,7 +214,7 @@ class _CommunityListPageState extends State<CommunityListPage> {
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 20),
               TextField(
                 controller: descCtrl,
                 maxLines: 3,

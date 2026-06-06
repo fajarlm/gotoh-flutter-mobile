@@ -85,6 +85,7 @@ class PostService {
   static Future<Map<String, dynamic>> updatePost({
     required int id,
     String? content,
+    String? type,
     File? imageFile,
     bool removeImage = false,
   }) async {
@@ -96,6 +97,7 @@ class PostService {
       );
       request.headers['Authorization'] = 'Bearer $token';
       if (content != null) request.fields['content'] = content;
+      if (type != null) request.fields['type'] = type;
       if (removeImage) {
         request.fields['remove_image'] = 'true';
       }
